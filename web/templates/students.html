@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Students</h2>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Student Placement Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>CGPA</th>
+                                <th>Total Offers</th>
+                                <th>Max Package</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for _, row in students.iterrows() %}
+                            <tr>
+                                <td>{{ row.first_name }} {{ row.last_name }}</td>
+                                <td>{{ row.dept_name }}</td>
+                                <td>{{ "%.2f"|format(row.cgpa) }}</td>
+                                <td>{{ row.total_offers }}</td>
+                                <td>₹{{ "%.2f"|format(row.max_package) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

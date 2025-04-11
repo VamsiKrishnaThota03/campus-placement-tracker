@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Companies</h2>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Company Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Industry</th>
+                                <th>Total Offers</th>
+                                <th>Average Package</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for _, row in companies.iterrows() %}
+                            <tr>
+                                <td>{{ row.company_name }}</td>
+                                <td>{{ row.industry }}</td>
+                                <td>{{ row.total_offers }}</td>
+                                <td>₹{{ "%.2f"|format(row.avg_package) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

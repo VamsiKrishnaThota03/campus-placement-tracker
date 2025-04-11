@@ -1,6 +1,3 @@
-# Environment variables
-.env
-
 # Python
 __pycache__/
 *.py[cod]
@@ -23,15 +20,33 @@ var/
 .installed.cfg
 *.egg
 
-# Excel files
-*.xlsx
+# Virtual Environment
+venv/
+ENV/
+env/
 
-# Generated images
-*.png
+# Environment variables
+.env
 
-# IDE specific files
+# IDE files
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store 
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Excel files
+*.xlsx
+
+# Generated images
+*.png 

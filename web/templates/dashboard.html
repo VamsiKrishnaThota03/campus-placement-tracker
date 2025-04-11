@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Placement Dashboard</h2>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Department-wise Placement Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Total Offers</th>
+                                <th>Accepted Offers</th>
+                                <th>Avg Package</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for _, row in stats.iterrows() %}
+                            <tr>
+                                <td>{{ row.dept_name }}</td>
+                                <td>{{ row.total_offers }}</td>
+                                <td>{{ row.accepted_offers }}</td>
+                                <td>₹{{ "%.2f"|format(row.avg_package) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Placement Trends</h5>
+            </div>
+            <div class="card-body">
+                <div id="placementTrends"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Salary Distribution by Department</h5>
+            </div>
+            <div class="card-body">
+                <div id="salaryDistribution"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load and display the plots
+    document.addEventListener('DOMContentLoaded', function() {
+        // Placement trends plot
+        var placementTrendsData = JSON.parse('{{ plots.placement_trends | safe }}');
+        Plotly.newPlot('placementTrends', placementTrendsData.data, placementTrendsData.layout);
+        
+        // Salary distribution plot
+        var salaryDistData = JSON.parse('{{ plots.salary_dist | safe }}');
+        Plotly.newPlot('salaryDistribution', salaryDistData.data, salaryDistData.layout);
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2 text-center">
+        <h1 class="display-4 mb-4">Welcome to Campus Placement Tracker</h1>
+        <p class="lead">Track and analyze placement statistics, manage student records, and monitor company hiring patterns.</p>
+        
+        {% if not current_user.is_authenticated %}
+        <div class="mt-5">
+            <p>Please login to access the dashboard and other features.</p>
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login</a>
+        </div>
+        {% else %}
+        <div class="mt-5">
+            <p>View your placement dashboard and analytics.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
