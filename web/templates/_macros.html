@@ -1,0 +1,22 @@
+{% macro chart(name, figure, height=360) -%}
+<div id="chart-{{ name }}" class="chart" style="min-height: {{ height }}px;">
+  {% if figure %}
+  <div class="chart-empty"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><span>Loading chart…</span></div>
+  {% else %}
+  <div class="chart-empty"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>No data to show yet.</span></div>
+  {% endif %}
+</div>
+{% if figure %}<script type="application/json" data-chart="chart-{{ name }}">{{ figure|tojson }}</script>{% endif %}
+{%- endmacro %}
+
+{% macro stat(label, value, icon, tone='primary') -%}
+<div class="card stat-card h-100">
+  <div class="card-body d-flex justify-content-between align-items-start">
+    <div>
+      <div class="stat-label">{{ label }}</div>
+      <div class="stat-value">{{ value }}</div>
+    </div>
+    <div class="stat-icon bg-{{ tone }}-subtle text-{{ tone }}-emphasis"><i class="bi bi-{{ icon }}" aria-hidden="true"></i></div>
+  </div>
+</div>
+{%- endmacro %}

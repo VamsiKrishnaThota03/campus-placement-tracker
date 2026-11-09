@@ -1,123 +1,49 @@
 {% extends "base.html" %}
-
+{% from "_macros.html" import chart, stat %}
+{% block title %}Analysis{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Placement Analysis</h2>
+<div class="page-header">
+    <div>
+        <h1>Placement analysis</h1>
+        <p>Placement rates, package spread and hiring patterns.</p>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Department-wise Placement Rate</h5>
-            </div>
-            <div class="card-body">
-                <div id="deptPlacementRate"></div>
-            </div>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">{{ stat('Total students', stats.total_students, 'people') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Placed students', stats.placed_students, 'person-check', 'success') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Average package', stats.avg_package|inr, 'currency-rupee', 'info') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Placement rate', '%.1f%%'|format(stats.placement_rate), 'percent', 'warning') }}</div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Students placed by department</h2></div>
+            <div class="card-body">{{ chart('dept_placement_rate', plots.dept_placement_rate) }}</div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Package Distribution</h5>
-            </div>
-            <div class="card-body">
-                <div id="packageDistribution"></div>
-            </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Accepted package distribution</h2></div>
+            <div class="card-body">{{ chart('package_distribution', plots.package_distribution) }}</div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Offers by industry</h2></div>
+            <div class="card-body">{{ chart('industry_hiring', plots.industry_hiring) }}</div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Offers per month</h2></div>
+            <div class="card-body">{{ chart('monthly_trends', plots.monthly_trends) }}</div>
         </div>
     </div>
 </div>
-
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Industry-wise Hiring</h5>
-            </div>
-            <div class="card-body">
-                <div id="industryHiring"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Monthly Placement Trends</h5>
-            </div>
-            <div class="card-body">
-                <div id="monthlyTrends"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Key Statistics</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <h6 class="card-title">Total Students</h6>
-                                <h3 class="card-text">{{ stats.total_students }}</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h6 class="card-title">Placed Students</h6>
-                                <h3 class="card-text">{{ stats.placed_students }}</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <h6 class="card-title">Average Package</h6>
-                                <h3 class="card-text">₹{{ "%.2f"|format(stats.avg_package) }}</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-warning text-white">
-                            <div class="card-body">
-                                <h6 class="card-title">Placement Rate</h6>
-                                <h3 class="card-text">{{ "%.1f"|format(stats.placement_rate) }}%</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Department-wise placement rate
-        var deptPlacementData = JSON.parse('{{ plots.dept_placement_rate | safe }}');
-        Plotly.newPlot('deptPlacementRate', deptPlacementData.data, deptPlacementData.layout);
-        
-        // Package distribution
-        var packageDistData = JSON.parse('{{ plots.package_distribution | safe }}');
-        Plotly.newPlot('packageDistribution', packageDistData.data, packageDistData.layout);
-        
-        // Industry-wise hiring
-        var industryData = JSON.parse('{{ plots.industry_hiring | safe }}');
-        Plotly.newPlot('industryHiring', industryData.data, industryData.layout);
-        
-        // Monthly trends
-        var monthlyData = JSON.parse('{{ plots.monthly_trends | safe }}');
-        Plotly.newPlot('monthlyTrends', monthlyData.data, monthlyData.layout);
-    });
-</script>
-{% endblock %} 
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

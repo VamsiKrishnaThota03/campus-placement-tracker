@@ -1,81 +1,73 @@
-/* Custom styles for Campus Placement Tracker */
-
-body {
-    background-color: #f8f9fa;
+/* Campus Placement Tracker */
+:root {
+  --cpt-bg: #f5f6fb;
+  --cpt-border: #e4e7f0;
+  --cpt-muted: #64748b;
+  --bs-primary: #4f46e5;
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-link-color: #4f46e5;
+  --bs-link-hover-color: #4338ca;
+  --bs-body-color: #1e293b;
+  --bs-body-font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-.navbar {
-    box-shadow: 0 2px 4px rgba(0,0,0,.1);
-}
+body { background: var(--cpt-bg); min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1; }
+:focus-visible { outline: 3px solid rgba(79, 70, 229, .45); outline-offset: 2px; }
 
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,.05);
-    border: none;
-    margin-bottom: 20px;
-}
+.btn-primary { --bs-btn-bg: #4f46e5; --bs-btn-border-color: #4f46e5; --bs-btn-hover-bg: #4338ca; --bs-btn-hover-border-color: #4338ca; --bs-btn-active-bg: #3730a3; --bs-btn-active-border-color: #3730a3; }
+.btn-outline-primary { --bs-btn-color: #4f46e5; --bs-btn-border-color: #c7c4f7; --bs-btn-hover-bg: #4f46e5; --bs-btn-hover-border-color: #4f46e5; --bs-btn-active-bg: #4f46e5; }
+.form-control:focus { border-color: #a5a1f3; box-shadow: 0 0 0 .2rem rgba(79, 70, 229, .18); }
 
-.card-header {
-    background-color: #fff;
-    border-bottom: 1px solid rgba(0,0,0,.125);
-}
+.app-navbar { background: linear-gradient(90deg, #1e1b4b, #312e81); box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+.app-navbar .navbar-brand { display: flex; align-items: center; gap: .55rem; font-weight: 700; letter-spacing: -.01em; }
+.app-navbar .nav-link { color: #c7d2fe; border-radius: .5rem; padding: .45rem .8rem !important; }
+.app-navbar .nav-link:hover, .app-navbar .nav-link:focus { color: #fff; background: rgba(255,255,255,.08); }
+.app-navbar .nav-link.active { color: #fff; background: rgba(255,255,255,.16); }
+.user-chip { color: #a5b4fc; font-size: .9rem; }
 
-.card-title {
-    margin-bottom: 0;
-    color: #333;
-}
+.page-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; margin: .5rem 0 1.5rem; }
+.page-header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.page-header p { color: var(--cpt-muted); margin: .25rem 0 0; }
 
-.table th {
-    border-top: none;
-    background-color: #f8f9fa;
-}
+.card { border: 1px solid var(--cpt-border); border-radius: .9rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 20px rgba(15,23,42,.04); }
+.card-header { background: #fff; border-bottom: 1px solid var(--cpt-border); padding: .9rem 1.1rem; border-radius: .9rem .9rem 0 0 !important; }
+.card-title { font-size: 1rem; font-weight: 600; margin: 0; }
 
-.table td {
-    vertical-align: middle;
-}
+.table { --bs-table-hover-bg: #f8f8fe; margin: 0; }
+.table thead th { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--cpt-muted); background: #fafbfe; font-weight: 600; border-bottom-width: 1px; padding-top: .8rem; padding-bottom: .8rem; }
+.table td, .table th { padding-left: 1.1rem; padding-right: 1.1rem; }
+.table tbody tr:last-child td { border-bottom: 0; }
 
-/* Dashboard specific styles */
-.dashboard-stat {
-    text-align: center;
-    padding: 20px;
-}
+.stat-card .card-body { padding: 1.1rem 1.2rem; }
+.stat-label { color: var(--cpt-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.stat-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; margin-top: .15rem; }
+.stat-icon { width: 2.5rem; height: 2.5rem; border-radius: .7rem; display: grid; place-items: center; font-size: 1.15rem; flex: none; }
 
-.dashboard-stat h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
-    color: #333;
-}
+.chart { position: relative; }
+.chart-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; color: var(--cpt-muted); }
+.chart-empty .bi { font-size: 1.75rem; color: #a5b4fc; }
 
-.dashboard-stat p {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 0;
-}
+.empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--cpt-muted); }
+.empty-state .bi { font-size: 2.25rem; color: #a5b4fc; display: block; margin-bottom: .5rem; }
 
-/* Analysis page styles */
-.plot-container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
+.search-box { position: relative; min-width: 260px; }
+.search-box .bi { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: var(--cpt-muted); }
+.search-box .form-control { padding-left: 2.3rem; border-radius: 999px; }
 
-/* Login page styles */
-.login-container {
-    max-width: 400px;
-    margin: 40px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,.1);
-}
+.hero { padding: 3.5rem 0 2rem; }
+.hero-title { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; margin-bottom: 1rem; }
+.feature-card .card-body { padding: 1.5rem; }
+.feature-icon { width: 3rem; height: 3rem; border-radius: .8rem; display: grid; place-items: center; font-size: 1.35rem; color: #4f46e5; background: #eef0ff; }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-stat {
-        margin-bottom: 20px;
-    }
-    
-    .plot-container {
-        margin-bottom: 30px;
-    }
-} 
+.auth-wrap { max-width: 420px; margin: 3rem auto; }
+
+.site-footer { color: var(--cpt-muted); font-size: .85rem; padding: 1.5rem 0; }
+
+@media (max-width: 575.98px) {
+  .page-header h1 { font-size: 1.35rem; }
+  .search-box { min-width: 100%; }
+  .stat-card .card-body { padding: .9rem; }
+  .stat-value { font-size: 1.2rem; }
+  .stat-icon { width: 2rem; height: 2rem; font-size: 1rem; }
+}

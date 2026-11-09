@@ -1,22 +1,33 @@
 {% extends "base.html" %}
-
+{% block title %}Welcome{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2 text-center">
-        <h1 class="display-4 mb-4">Welcome to Campus Placement Tracker</h1>
-        <p class="lead">Track and analyze placement statistics, manage student records, and monitor company hiring patterns.</p>
-        
-        {% if not current_user.is_authenticated %}
-        <div class="mt-5">
-            <p>Please login to access the dashboard and other features.</p>
-            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login</a>
-        </div>
+<section class="hero text-center">
+    <span class="badge rounded-pill text-bg-light border mb-3"><i class="bi bi-mortarboard me-1"></i>Placement season insights</span>
+    <h1 class="hero-title">Track every offer,<br class="d-none d-md-inline"> department and recruiter</h1>
+    <p class="lead text-secondary mx-auto" style="max-width: 42rem;">See placement rates, salary ranges and hiring trends across departments and companies in one place.</p>
+    <div class="mt-4">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">Go to dashboard <i class="bi bi-arrow-right ms-1"></i></a>
         {% else %}
-        <div class="mt-5">
-            <p>View your placement dashboard and analytics.</p>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
-        </div>
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4">Log in to get started</a>
         {% endif %}
     </div>
+</section>
+
+<div class="row g-4 mt-2">
+    {% for icon, title, text in [
+        ('speedometer2', 'Dashboard', 'Offers, acceptances and average packages per department at a glance.'),
+        ('people', 'Students & companies', 'Searchable tables of every student and recruiter with their offers.'),
+        ('graph-up-arrow', 'Analysis', 'Placement rates, package distribution, industry mix and monthly trends.')] %}
+    <div class="col-md-4">
+        <div class="card h-100 feature-card">
+            <div class="card-body">
+                <div class="feature-icon mb-3"><i class="bi bi-{{ icon }}" aria-hidden="true"></i></div>
+                <h2 class="h5 fw-semibold">{{ title }}</h2>
+                <p class="text-secondary mb-0">{{ text }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
-{% endblock %} 
+{% endblock %}

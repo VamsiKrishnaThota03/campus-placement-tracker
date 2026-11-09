@@ -1,26 +1,28 @@
 {% extends "base.html" %}
-
+{% block title %}Log in{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-md-6 offset-md-3">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">Login</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Login</button>
-                </form>
-            </div>
+<div class="auth-wrap">
+    <div class="text-center mb-4">
+        <h1 class="h3 fw-bold mb-1">Welcome back</h1>
+        <p class="text-secondary mb-0">Log in to view placement data.</p>
+    </div>
+    <div class="card">
+        <div class="card-body p-4">
+            <form method="post" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control form-control-lg" id="username" name="username" value="{{ request.form.get('username', '') }}" autocomplete="username" autofocus required>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control form-control-lg" id="password" name="password" autocomplete="current-password" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Log in</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

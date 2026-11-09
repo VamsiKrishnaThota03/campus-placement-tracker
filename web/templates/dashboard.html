@@ -1,80 +1,80 @@
 {% extends "base.html" %}
-
+{% from "_macros.html" import chart, stat %}
+{% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Placement Dashboard</h2>
+<div class="page-header">
+    <div>
+        <h1>Placement dashboard</h1>
+        <p>Offers and packages across departments.</p>
     </div>
+    <a href="{{ url_for('analysis') }}" class="btn btn-outline-primary"><i class="bi bi-graph-up me-1"></i>Full analysis</a>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Department-wise Placement Statistics</h5>
-            </div>
-            <div class="card-body">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">{{ stat('Students', summary.total_students, 'people') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Placed', summary.placed_students, 'person-check', 'success') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Placement rate', '%.0f%%'|format(summary.placement_rate), 'percent', 'warning') }}</div>
+    <div class="col-6 col-lg-3">{{ stat('Avg accepted package', summary.avg_package|inr, 'currency-rupee', 'info') }}</div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Department-wise statistics</h2></div>
+            <div class="card-body p-0">
+                {% if stats.empty %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                    <p class="mb-0">No departments yet. Seed sample data with <code>flask --app app init-db</code>.</p>
+                </div>
+                {% else %}
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>Department</th>
-                                <th>Total Offers</th>
-                                <th>Accepted Offers</th>
-                                <th>Avg Package</th>
+                                <th scope="col">Department</th>
+                                <th scope="col" class="text-end">Offers</th>
+                                <th scope="col" class="text-end">Accepted</th>
+                                <th scope="col" class="text-end">Placed</th>
+                                <th scope="col" class="text-end">Avg package</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for _, row in stats.iterrows() %}
+                            {% for row in stats.itertuples() %}
                             <tr>
-                                <td>{{ row.dept_name }}</td>
-                                <td>{{ row.total_offers }}</td>
-                                <td>{{ row.accepted_offers }}</td>
-                                <td>₹{{ "%.2f"|format(row.avg_package) }}</td>
+                                <td class="fw-medium">{{ row.dept_name }}</td>
+                                <td class="text-end">{{ row.total_offers }}</td>
+                                <td class="text-end">{{ row.accepted_offers }}</td>
+                                <td class="text-end">
+                                    <span class="badge rounded-pill {{ 'text-bg-success' if row.placement_rate >= 75 else ('text-bg-warning' if row.placement_rate >= 40 else 'text-bg-light border') }}">{{ '%.0f'|format(row.placement_rate) }}%</span>
+                                </td>
+                                <td class="text-end text-nowrap">{{ row.avg_package|inr }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Placement Trends</h5>
-            </div>
-            <div class="card-body">
-                <div id="placementTrends"></div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="card-title">Placement trends</h2></div>
+            <div class="card-body">{{ chart('placement_trends', plots.placement_trends) }}</div>
+        </div>
+    </div>
+
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Salary Distribution by Department</h5>
-            </div>
-            <div class="card-body">
-                <div id="salaryDistribution"></div>
-            </div>
+            <div class="card-header"><h2 class="card-title">Accepted package by department</h2></div>
+            <div class="card-body">{{ chart('salary_dist', plots.salary_dist, 400) }}</div>
         </div>
     </div>
 </div>
-
-<script>
-    // Load and display the plots
-    document.addEventListener('DOMContentLoaded', function() {
-        // Placement trends plot
-        var placementTrendsData = JSON.parse('{{ plots.placement_trends | safe }}');
-        Plotly.newPlot('placementTrends', placementTrendsData.data, placementTrendsData.layout);
-        
-        // Salary distribution plot
-        var salaryDistData = JSON.parse('{{ plots.salary_dist | safe }}');
-        Plotly.newPlot('salaryDistribution', salaryDistData.data, salaryDistData.layout);
-    });
-</script>
-{% endblock %} 
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}
