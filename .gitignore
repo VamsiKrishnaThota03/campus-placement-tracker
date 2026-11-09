@@ -27,6 +27,8 @@ env/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # IDE files
 .idea/
@@ -48,5 +50,10 @@ Thumbs.db
 # Excel files
 *.xlsx
 
-# Generated images
-*.png 
+# Generated images (README screenshots are kept)
+*.png
+!docs/screenshots/*.png
+
+# Output of src/analyze_placements.py
+reports/
+
