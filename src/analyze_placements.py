@@ -1,31 +1,49 @@
+"""Offline placement analysis against the PostgreSQL schema in database/.
+
+Writes PNG charts and an Excel workbook to reports/ (or REPORTS_DIR).
+"""
 import os
-import pandas as pd
-import psycopg2
-from dotenv import load_dotenv
-import matplotlib.pyplot as plt
-import seaborn as sns
+import urllib.parse
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 
-# Load environment variables
-load_dotenv()
+import matplotlib
+matplotlib.use('Agg')  # no display needed
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
+import seaborn as sns  # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
 
-# Database connection parameters
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST'),
-    'database': os.getenv('DB_NAME'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'port': os.getenv('DB_PORT')
-}
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / '.env')
+REPORTS_DIR = Path(os.getenv('REPORTS_DIR', ROOT / 'reports'))
 
-def get_db_connection():
-    """Create and return a database connection"""
-    return psycopg2.connect(**DB_PARAMS)
+
+def analysis_database_url():
+    """ANALYSIS_DATABASE_URL, else DATABASE_URL, else the DB_* variables."""
+    url = os.getenv('ANALYSIS_DATABASE_URL') or os.getenv('DATABASE_URL')
+    if url:
+        return url.replace('postgres://', 'postgresql://', 1)
+    if not os.getenv('DB_NAME'):
+        raise SystemExit('Set ANALYSIS_DATABASE_URL, DATABASE_URL or DB_NAME/DB_USER/DB_PASSWORD/'
+                         'DB_HOST/DB_PORT to point at the PostgreSQL database.')
+    user = urllib.parse.quote_plus(os.getenv('DB_USER', ''))
+    password = urllib.parse.quote_plus(os.getenv('DB_PASSWORD', ''))
+    auth = f'{user}:{password}@' if password else (f'{user}@' if user else '')
+    return (f"postgresql://{auth}{os.getenv('DB_HOST', 'localhost')}:"
+            f"{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}")
+
+
+@lru_cache(maxsize=1)
+def get_engine():
+    return create_engine(analysis_database_url())
+
 
 def execute_query(query):
     """Execute a SQL query and return results as a pandas DataFrame"""
-    with get_db_connection() as conn:
-        return pd.read_sql_query(query, conn)
+    return pd.read_sql_query(query, get_engine())
 
 def analyze_company_wise_placements():
     """Analyze placement patterns by company"""
@@ -99,7 +117,7 @@ def generate_visualizations():
     plt.title('Total Offers by Company')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('company_placements.png')
+    plt.savefig(REPORTS_DIR / 'company_placements.png', dpi=120)
     plt.close()
 
     # Department-wise placement percentage
@@ -109,7 +127,7 @@ def generate_visualizations():
     plt.title('Placement Percentage by Department')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('department_placements.png')
+    plt.savefig(REPORTS_DIR / 'department_placements.png', dpi=120)
     plt.close()
 
     # Salary distribution
@@ -119,14 +137,14 @@ def generate_visualizations():
     plt.title('Salary Distribution by Department')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('salary_distribution.png')
+    plt.savefig(REPORTS_DIR / 'salary_distribution.png', dpi=120)
     plt.close()
 
 def generate_excel_report():
     """Generate comprehensive Excel report"""
     # Create Excel writer
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    excel_file = f'placement_analysis_{timestamp}.xlsx'
+    excel_file = REPORTS_DIR / f'placement_analysis_{timestamp}.xlsx'
     writer = pd.ExcelWriter(excel_file, engine='openpyxl')
 
     # Write different analyses to different sheets
@@ -143,6 +161,7 @@ def main():
     """Main function to run the analysis"""
     try:
         print("Starting placement analysis...")
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         
         # Generate visualizations
         print("Generating visualizations...")
@@ -153,10 +172,10 @@ def main():
         excel_file = generate_excel_report()
         
         print(f"Analysis complete! Excel report saved as: {excel_file}")
-        print("Visualizations have been saved as PNG files.")
-        
+        print(f"Visualizations have been saved as PNG files in {REPORTS_DIR}.")
+
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        raise SystemExit(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main() 
