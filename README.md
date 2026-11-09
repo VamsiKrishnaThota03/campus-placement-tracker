@@ -1,6 +1,8 @@
 # Campus Placement Tracker
 
-A Flask and PostgreSQL web app for tracking campus placement data, with interactive Plotly charts covering departments, companies and salaries.
+A Flask web app (PostgreSQL in production, SQLite for local development) for tracking campus placement data, with interactive Plotly charts covering departments, companies and salaries.
+
+![Dashboard](docs/screenshots/dashboard.png)
 
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
@@ -12,33 +14,34 @@ A Flask and PostgreSQL web app for tracking campus placement data, with interact
 
 The project has two parts:
 
-- **Web app** (`web/`): a Flask app with a login. It shows a placement dashboard, student and company tables, and an analysis page. Data comes from PostgreSQL through SQLAlchemy, is aggregated with pandas, and is rendered with Plotly.js.
+- **Web app** (`web/`): a Flask app with a login. It shows a placement dashboard, student and company tables, and an analysis page. Data is read through SQLAlchemy (PostgreSQL or SQLite), aggregated with pandas, and rendered with Plotly.js.
 - **Offline analysis script** (`src/analyze_placements.py`): queries a PostgreSQL database with psycopg2. It saves Matplotlib/Seaborn charts as PNG files and writes a multi-sheet Excel report. It uses the schema in `database/`.
 
 ## Features
 
-- **Login and logout** with Flask-Login. Passwords are stored as Werkzeug hashes.
-- **Dashboard** with per-department totals: offers, accepted offers and average package.
-- **Students page**: each student's department, CGPA, number of offers and highest package
-- **Companies page**: each company's industry, number of offers and average package
-- **Analysis page** with key stats (total students, placed students, average package, placement rate) and these Plotly charts:
-  - Salary distribution by department (box plot)
-  - Placement trends: total vs. accepted offers by month
-  - Department-wise placement rate
-  - Industry-wise hiring (pie chart)
-  - Monthly placement counts
-- **Sample data seeding**: `web/init_db.py` creates the tables, an admin user, 4 departments, 4 companies, 20 students and 30 job offers.
+- **Login and logout** with Flask-Login. Passwords are stored as Werkzeug hashes. Forms are CSRF-protected (Flask-WTF), logout is POST-only, and the post-login redirect only accepts local paths.
+- **Dashboard**: summary cards (students, placed, placement rate, average accepted package), a per-department table (offers, accepted offers, share of students placed, average package), monthly placement trends and a package box plot by department.
+- **Students page**: department, CGPA, number of offers, best package and a Placed / Offer pending / No offers badge, with instant search
+- **Companies page**: industry, number of offers and average package, with instant search
+- **Analysis page** with key stats and these Plotly charts:
+  - Share of students placed per department
+  - Accepted package distribution (histogram)
+  - Offers by industry (donut)
+  - Offers per month
+- **Empty and error states**: charts and tables show a message when there is no data; custom 404/500 pages
+- **Sample data seeding**: `flask --app app init-db` creates the tables, an admin user (password from `ADMIN_PASSWORD`), 4 departments, 4 companies, 20 students and 30 job offers.
 - **Excel and PNG reports** from `src/analyze_placements.py`, with company, department, salary distribution and trend sheets.
 - **SQL scripts** for creating the standalone schema and loading sample data or a larger dataset (`database/`).
+- **Tests** (`web/test_app.py`) run against an in-memory SQLite database.
 
 ## Tech stack
 
 | Layer          | Technology                                         |
 |----------------|----------------------------------------------------|
-| Backend        | Python, Flask 2.3, Flask-SQLAlchemy, Flask-Login   |
-| Database       | PostgreSQL (psycopg2)                              |
+| Backend        | Python, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF (CSRF) |
+| Database       | PostgreSQL (psycopg2) or SQLite for local development |
 | Data           | pandas, Plotly (web), Matplotlib + Seaborn (script), openpyxl |
-| Frontend       | Jinja2 templates, Bootstrap 5, Plotly.js (CDN)     |
+| Frontend       | Jinja2 templates, Bootstrap 5.3, Bootstrap Icons, Plotly.js 2.35 (CDN) |
 
 ## Project structure
 
@@ -53,10 +56,13 @@ campus-placement-tracker/
 ├── src/
 │   └── analyze_placements.py # Generates PNG charts and an Excel report
 ├── web/
-│   ├── app.py                # Flask app, models, routes, chart queries
+│   ├── app.py                # Flask app, models, routes, charts, `init-db` command
 │   ├── init_db.py            # Drops, recreates and seeds the web app tables
-│   ├── templates/            # base, index, login, dashboard, students, companies, analysis
-│   └── static/css/style.css
+│   ├── test_app.py           # unittest smoke tests
+│   ├── templates/            # base, index, login, dashboard, students, companies, analysis, error
+│   └── static/               # css/, js/ (chart rendering, table search), img/favicon.svg
+├── docs/screenshots/
+├── .env.example
 └── requirements.txt
 ```
 
@@ -64,8 +70,8 @@ campus-placement-tracker/
 
 ### Prerequisites
 
-- Python 3.8+
-- PostgreSQL
+- Python 3.10+
+- PostgreSQL for deployments (optional locally: without database settings the app uses `web/placements.db`, SQLite)
 
 ### Install
 
@@ -75,50 +81,63 @@ cd campus-placement-tracker
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env            # then edit .env
 ```
 
 ### Environment variables
 
-Create a `.env` file in the project root. `python-dotenv` searches upward from the script directory, so it is found from both `web/` and `src/`.
+`.env` is read from the project root (or `web/`).
 
-| Variable      | Description                         | Example               |
-|---------------|-------------------------------------|-----------------------|
-| `DB_USER`     | PostgreSQL user                     | `<db_user>`           |
-| `DB_PASSWORD` | PostgreSQL password (required)      | `<db_password>`       |
-| `DB_HOST`     | Database host                       | `localhost`           |
-| `DB_PORT`     | Database port                       | `5432`                |
-| `DB_NAME`     | Database name                       | `placement_tracker`   |
-| `SECRET_KEY`  | Flask session secret                | `<random-secret>`     |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SECRET_KEY` | yes, unless `FLASK_DEBUG=1` | Flask session and CSRF signing key. Generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `FLASK_DEBUG` | no | `1` for local development only (enables the debugger and a throwaway secret key) |
+| `DATABASE_URL` | no | e.g. `postgresql://user:pass@host:5432/placement_tracker`. `postgres://` URLs (Render, Heroku) are accepted. |
+| `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME` | no | Used instead of `DATABASE_URL` when `DB_NAME` is set |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | for seeding | Account created by `flask --app app init-db` (username defaults to `admin`) |
+| `PORT` | no | Port for `python app.py` (default `5001`) |
+| `SESSION_COOKIE_SECURE` | no | Defaults to on when debug is off. Set `false` to test a non-debug build over plain HTTP. |
+| `ANALYSIS_DATABASE_URL`, `REPORTS_DIR` | no | For `src/analyze_placements.py`; fall back to `DATABASE_URL` / `DB_*` and `reports/` |
+
+With no database variables set, the web app uses SQLite at `web/placements.db`.
 
 ### Initialize the database
 
-Create the database (for example `createdb placement_tracker`), then:
+For PostgreSQL, create the database first (for example `createdb placement_tracker`). Then:
 
 ```bash
 cd web
-python init_db.py
+flask --app app init-db          # creates tables and sample data if the DB is empty
+flask --app app init-db --reset  # drops all web-app tables first
 ```
 
-> `init_db.py` runs `db.drop_all()` first, so it wipes any existing web app tables.
+`python init_db.py` does the same as `init-db --reset`.
 
 ### Run the web app
 
 ```bash
 cd web
-python app.py
+python app.py                    # http://127.0.0.1:5001
 ```
 
-Open <http://localhost:5001>. The seeded account is username `admin`, password `admin123`. Change it for anything beyond local use.
+Log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`. For production, run it behind a WSGI server, e.g. `gunicorn app:app` from `web/`.
+
+### Tests
+
+```bash
+cd web
+python -m unittest -v
+```
 
 ### Run the offline analysis (optional)
 
-Load the standalone schema and sample data first, for example `psql -d placement_tracker -f database/setup_database.sql`. Then:
+Load the standalone schema and sample data into PostgreSQL first, for example `psql -d placement_tracker -f database/setup_database.sql`. Then:
 
 ```bash
 python src/analyze_placements.py
 ```
 
-The script writes `company_placements.png`, `department_placements.png`, `salary_distribution.png` and `placement_analysis_<timestamp>.xlsx` to the current directory.
+The script writes `company_placements.png`, `department_placements.png`, `salary_distribution.png` and `placement_analysis_<timestamp>.xlsx` to `reports/` (git-ignored).
 
 ## Routes
 
@@ -126,8 +145,22 @@ The script writes `company_placements.png`, `department_placements.png`, `salary
 |-----------|--------------|----------|-----------------------------------------|
 | GET       | `/`          | Public   | Landing page                            |
 | GET, POST | `/login`     | Public   | Login form                              |
-| GET       | `/logout`    | Required | Log out                                 |
+| POST      | `/logout`    | Required | Log out                                 |
 | GET       | `/dashboard` | Required | Department statistics and charts        |
 | GET       | `/students`  | Required | Student placement table                 |
 | GET       | `/companies` | Required | Company hiring table                    |
 | GET       | `/analysis`  | Required | Key statistics and Plotly charts        |
+
+## Screenshots
+
+| Analysis | Students (mobile) |
+|---|---|
+| ![Analysis page](docs/screenshots/analysis.png) | <img src="docs/screenshots/students-mobile.png" alt="Students page on a phone" width="260"> |
+
+## Known limitations
+
+- The web app is read-only: data is loaded by the seed command or directly in the database. There are no forms to add students, companies or offers.
+- `User.role` is stored but not checked; every logged-in user sees everything.
+- The web app tables (`department`, `student`, `company`, `job_offer`) and the `database/*.sql` schema used by the analysis script (`departments`, `students`, …) are separate. The analysis script only works with PostgreSQL.
+- There are no database migrations; `db.create_all()` creates missing tables but does not alter existing ones.
+- `LICENSE` is empty.
