@@ -10,6 +10,10 @@ A Flask web app (PostgreSQL in production, SQLite for local development) for tra
 ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?logo=plotly&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?logo=bootstrap&logoColor=white)
 
+[![CI](https://github.com/VamsiKrishnaThota03/campus-placement-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/VamsiKrishnaThota03/campus-placement-tracker/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/VamsiKrishnaThota03/campus-placement-tracker/actions/workflows/codeql.yml/badge.svg)](https://github.com/VamsiKrishnaThota03/campus-placement-tracker/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## Overview
 
 The project has two parts:
@@ -164,3 +168,68 @@ The script writes `company_placements.png`, `department_placements.png`, `salary
 - The web app tables (`department`, `student`, `company`, `job_offer`) and the `database/*.sql` schema used by the analysis script (`departments`, `students`, …) are separate. The analysis script only works with PostgreSQL.
 - There are no database migrations; `db.create_all()` creates missing tables but does not alter existing ones.
 - `LICENSE` is empty.
+
+
+## Security
+
+The Flask configuration was already careful: `SECRET_KEY` has no production
+fallback (the app raises unless `FLASK_DEBUG` is on), `CSRFProtect` is
+registered, session and remember-me cookies are `HttpOnly`, `SameSite=Lax` and
+`Secure` outside debug, and the dev server binds `127.0.0.1` by default.
+
+What was missing was **response headers** — Flask sends none. An
+`after_request` hook now adds a CSP, `nosniff`, `X-Frame-Options: DENY`, a
+referrer policy, a `Permissions-Policy` denying camera/microphone/geolocation,
+and HSTS (only when not in debug *and* secure cookies are on, so a plain-HTTP
+deployment is not locked out of its own host for a year).
+
+The CSP allows `cdn.jsdelivr.net` and `cdn.plot.ly`, which the templates load
+Bootstrap, Bootstrap Icons and Plotly from, and permits `'unsafe-inline'` for
+scripts and styles — Plotly injects inline style attributes and some templates
+carry inline chart-initialisation blocks. That exception is named rather than
+quietly omitted; removing it would mean vendoring those assets locally and
+moving the inline blocks into files.
+
+## Tests
+
+```bash
+python -m pytest web/test_app.py -v      # 13 tests
+```
+
+The 7 existing tests cover the dashboard, login and the statistics helpers. The
+6 added cover the headers themselves — they produce no visible symptom when
+they go missing, so a refactor can drop them silently — including that the CSP
+still names both CDNs (forgetting one would break every chart in the browser
+rather than failing server-side), that framing/objects/base-URI rewrites are
+denied, and that HSTS is *not* announced from a plain-HTTP server.
+
+Two more re-enable `CSRFProtect` (the other suites disable it so they can post
+forms, which would otherwise make the protection untested) and assert the login
+form carries a token and that a tokenless POST is rejected with 400 rather than
+logging in.
+
+## Continuous integration
+
+| Job | What it proves |
+| --- | --- |
+| `test` (Python 3.11, 3.12) | The 13 tests |
+| `config-safety` | Importing the app without `SECRET_KEY` raises instead of using a default; the running server listens on `127.0.0.1` and not `0.0.0.0` (read from `ss -ltn`); and the security headers are present on a real HTTP response, not only in tests |
+| `docker` | The image builds |
+
+CodeQL runs over Python weekly and on every push; Dependabot watches pip,
+Actions and the Dockerfile.
+
+## Docker
+
+```bash
+printf 'SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\nADMIN_PASSWORD=%s\n' \
+  "$(python3 -c 'import secrets;print(secrets.token_hex(32))')" \
+  "$(openssl rand -hex 16)" "$(openssl rand -base64 18)" > .env
+
+docker compose up --build
+open http://localhost:5001
+```
+
+Runs under gunicorn as a non-root user with PostgreSQL. Both ports publish to
+`127.0.0.1` only, and Compose fails fast with a named error if any of the three
+secrets is missing.

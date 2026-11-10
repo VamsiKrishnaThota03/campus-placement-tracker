@@ -1,0 +1,49 @@
+# Local run under gunicorn with PostgreSQL, as it would be deployed.
+#
+# Both published ports bind to 127.0.0.1, so neither service is reachable from
+# the local network. The app reaches Postgres over the compose network; the
+# database publish is only a convenience for psql.
+#
+#   printf 'SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\nADMIN_PASSWORD=%s\n' \
+#     "$(python3 -c 'import secrets;print(secrets.token_hex(32))')" \
+#     "$(openssl rand -hex 16)" "$(openssl rand -base64 18)" > .env
+#   docker compose up --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: placements
+      POSTGRES_USER: placements
+      # No default: compose refuses to start until this is set in .env.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U placements -d placements"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_DEBUG: '0'
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DATABASE_URL: postgresql+psycopg2://placements:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/placements
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      # Reached over plain HTTP on loopback, so secure cookies and the HSTS
+      # header would make it unusable locally.
+      SESSION_COOKIE_SECURE: 'false'
+    ports:
+      - "127.0.0.1:5001:5001"
+
+volumes:
+  pgdata:

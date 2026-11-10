@@ -72,6 +72,52 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
+# ---------------------------------------------------------------------------
+# Security response headers.
+#
+# Flask sends none of these by default. The CSP has to allow the jsDelivr and
+# Plotly CDNs the templates load from, plus 'unsafe-inline' for styles and
+# scripts: Plotly injects inline style attributes, and some templates carry
+# inline <script> blocks for chart initialisation. Tightening that further
+# would mean bundling those assets locally and moving the inline blocks into
+# files — worth doing, but a larger change than this one, so the exception is
+# named rather than quietly left out.
+# ---------------------------------------------------------------------------
+CSP = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.plot.ly",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "font-src 'self' data: https://cdn.jsdelivr.net",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'none'",
+        "object-src 'none'",
+    ]
+)
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers.setdefault("Content-Security-Policy", CSP)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+    )
+    # Only meaningful over TLS, and only sent when the deployment is actually
+    # serving HTTPS — announcing HSTS from a plain-HTTP dev server would lock
+    # the browser out of localhost.
+    if not DEBUG and env_bool("SESSION_COOKIE_SECURE", True):
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    return response
+
+
 
 # --------------------------------------------------------------------------- models
 
